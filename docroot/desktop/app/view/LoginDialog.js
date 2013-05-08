@@ -41,16 +41,14 @@ Ext.define('ab.view.LoginDialog', {
                 itemId     : 'email',
                 // fieldLabel : 'Username',
                 hideLabel  : true,
-                emptyText : 'Email Address',
-                value      : 'admin'
+                emptyText : 'Email Address'
             },
             {
                 itemId     : 'password',
                 inputType  : 'password',
                 hideLabel  : true,
                 // fieldLabel : 'Password',
-                emptyText : 'Password',
-                value      : 'admin'
+                emptyText : 'Password'
             },
             {
                 xtype  : 'component',
@@ -78,11 +76,12 @@ Ext.define('ab.view.LoginDialog', {
                 scope      : me,
                 specialkey : me.onFieldSpecialKey
             };
-        this.callParent();
+        me.callParent();
 
         Ext.each(this.query('field'), function(tf) {
             tf.on(listeners);
         });
+
     },
 
     setMessage   : function(text) {
