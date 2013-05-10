@@ -69,9 +69,9 @@ Ext.define("mobile.view.ContactList", {
                 {
                     sorterFn  : function(a, b) {
                         // this logic is presented for clarity, not for elegance
-                        a = a.raw.lastName + ' ' + a.raw.firstName;
+                        a = a.get('lastName') + ' ' + a.get('firstName');
                         a = a.toLowerCase();
-                        b = b.raw.lastName + ' ' + b.raw.firstName;
+                        b = b.get('lastName') + ' ' + b.get('firstName');
                         b = b.toLowerCase();
                         return a.localeCompare(b);
                     },

@@ -18,11 +18,20 @@ Ext.define('mobile.view.GroupList', {
         'Ext.Anim'
     ],
 
+
     config : {
+        // The only way I could get a custom load mask for loading the contact groups list
+        // was to set loadingText to null, and implement setMask() calls in the store's
+        // beforeload and load listeners.
+        //
+        // The API docs say you can have a masked config, but it is ignored or overridden
+        // by onBeforeLoad() in DataView.js in the library.
+        loadingText: null,
+
         grouped  : false,
         indexBar : false,
-
         itemTpl : ''.concat(
+//            '<input type="button" value="Edit"> {groupName}<span></span>'
             '{groupName}<span></span>'
         )
     },
@@ -63,21 +72,29 @@ Ext.define('mobile.view.GroupList', {
             },
             sorters   : {
                 sorterFn: function(a, b) {
-                    if (a.raw.groupName === 'All Contacts') {
+                    if (a.get('groupName') === 'All Contacts') {
                         return -1;
                     }
-                    a = a.raw.groupName.toLowerCase();
-                    b = b.raw.groupName.toLowerCase();
+                    a = a.get('groupName').toLowerCase();
+                    b = b.get('groupName').toLowerCase();
                     return a.localeCompare(b);
                 },
                 direction: 'ASC'
             },
             listeners : {
+                beforeload: function() {
+                    me.setMasked({
+                        xtype     : 'loadmask',
+                        message   : 'Loading Groups...',
+                        indicator : false
+                    });
+                },
                 load : function (store) {
                     store.insert(0, {
                         contactGroupId : 0,
                         groupName      : 'All Contacts'
                     });
+                    me.setMasked(false);
                     me.fireEvent('storeloaded');
                 }
             }
