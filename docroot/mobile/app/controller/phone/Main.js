@@ -42,6 +42,7 @@
         var allGroups = [],
             groups = [];
 
+        Ext.Viewport.setMasked({ xtype: 'loadmask', message: 'Loading Contact Information...', indicator: false });
         common.DreamFactory.filterRecords(mobile.schemas.ContactGroups.name, {
             fields   : 'contactGroupId,groupName',
             callback : function(o) {
@@ -58,6 +59,7 @@
                         callback : function(o) {
                             record = o.record[0];
                             if (!record.contactId) {
+                                Ext.Viewport.setMasked(false);
                                 Ext.Msg.alert('Error', 'Contact has been removed and can no longer be edited.');
                                 if (callback) {
                                     callback(false);
@@ -82,6 +84,7 @@
                                             });
                                             record.groups = allGroups;
                                             record.currentGroups = groups;
+                                            Ext.Viewport.setMasked(false);
                                             if (callback) {
                                                 callback(record);
                                             }
@@ -103,6 +106,7 @@
                     }
                     record.groups = allGroups;
                     record.currentGroups = groups;
+                    Ext.Viewport.setMasked(false);
                     if (callback) {
                         callback(record);
                     }
@@ -110,6 +114,30 @@
             }
         });
     }
+
+    function saveContactGroupRecord(record, callback) {
+        var schema = mobile.schemas.ContactGroups;
+
+        Ext.Viewport.setMasked({ xtype: 'loadmask', message: 'Saving Group...', indicator: false });
+        if (record[schema.primaryKey]) {
+            common.DreamFactory.updateRecords(schema.name, [record], function () {
+                Ext.Viewport.setMasked(false);
+                if (callback) {
+                    callback();
+                }
+            });
+        }
+        else {
+            common.DreamFactory.createRecords(schema.name, [record], function () {
+                Ext.Viewport.setMasked(false);
+                if (callback) {
+                    callback();
+                }
+            });
+        }
+    }
+
+
 
     /**
      *                  _     _ _                       _             _ _                 _                        __  __       _
@@ -141,6 +169,7 @@
             control : {
                 'group_list' : {
                     itemtap     : 'onGroupSelected',
+                    itemtaphold : 'onGroupTapHold',
                     deleteGroup : 'onDeleteGroup'
                 },
 
@@ -183,7 +212,8 @@
         },
 
         refreshContactList : function(contactGroupId, callback) {
-            var me = this;
+            var me = this,
+                contactList = me.getContactList();
 
             if (contactGroupId) {
                 common.DreamFactory.filterRecords(mobile.schemas.ContactRelationships.name, {
@@ -193,7 +223,7 @@
                         Ext.iterate(o.record, function(item) {
                             mobile.data.contactIds.push(intVal(item.contactId));
                         });
-                        me.getContactList().getStore().load(callback);
+                        contactList.getStore().load(callback);
                     }
                 });
             }
@@ -410,8 +440,7 @@
         },
 
         onGroupSelected : function(list, index, target, record, e) {
-            var me = this
-            contactList = me.getContactList(),
+            var me = this,
                 groupList = me.getGroupList();
 
             if (groupList.deleteButton) {
@@ -430,6 +459,54 @@
                 }, 1);
             });
         },
+
+        //
+        // There's quite a bit of Sencha Touch event ugliness to deal with here
+        // 1) The itemtaphold event does fire before itemtap, which is good
+        // 2) It seems Touch ignores e.stopEvent() and return false for itemtaphold
+        // 3) Upon lifting finger, itemtap fires - I could find no obvious way to prevent this
+        //
+        // See:
+        // http://www.sencha.com/forum/showthread.php?234142-How-to-disable-lists-s-itemtap-if-itemtaphold-already-fired
+        //
+        // I chose to use the suspendEvents/resumeEvents scheme.
+        // However, since there's no way to determine how long the person holds down his finger,
+        // I had to alert() on the All Groups item (which cannot be edited) and resumeEvents in its
+        // callback.
+        //
+        onGroupTapHold : function(list, index, target, record, e, eOpts) {
+            var me = this,
+                contactGroupId = intVal(record.get('contactGroupId')),
+                groupName = record.get('groupName');
+
+            console.dir(record);
+            e.stopEvent();      // why not?
+            list.suspendEvents(false);
+            if (!contactGroupId) {
+                // All Groups
+                Ext.Msg.alert('Error', 'You cannot edit this group', function() {
+                    list.resumeEvents();
+                });
+            }
+            else {
+                Ext.Msg.prompt('Edit Group', 'Edit Group Name', function(btn, value) {
+                    list.resumeEvents();
+                    if (btn === 'cancel') {
+                        return;
+                    }
+                    if (groupName === value) {
+                        Ext.Msg.alert('Warning', 'Group Name is unchanged');
+                        return;
+                    }
+                    console.log(value);
+                    saveContactGroupRecord({ contactGroupId: contactGroupId, groupName: value }, function() {
+                        me.getGroupList().getStore().load();
+                    });
+                }, me, false, groupName);
+            }
+            return false;
+        },
+
 
         onContactSelected : function(list, index, target, record, e) {
             var me = this,
