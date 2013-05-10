@@ -32,7 +32,7 @@ Ext.define('mobile.controller.Login', {
     },
 
     init: function() {
-//        console.log('init ' + this.$className);
+        console.log('init ' + this.$className);
     },
 
     onFormShown: function() {
