@@ -53,12 +53,14 @@ Ext.define('mobile.controller.Login', {
     },
 
     doLogin: function(form) {
+        Ext.Viewport.setMasked({ xtype: 'loadmask', message: 'Logging in...', indicator: false });
         var fields = form.getValues();
 
         var login = Ext.create('mobile.model.Login', { id: 'saved', email: fields.email, password: fields.password });
         login.save();
 
         common.DreamFactory.login(fields.email, fields.password, function(o) {
+            Ext.Viewport.setMasked(false);
             if (o.error) {
                 var e = o.error[0],
                     code = e.code,
