@@ -10,68 +10,6 @@
  */
 (function() {
 
-    function createTables(callback) {
-        var toCreate = [];
-        Ext.iterate(ab.Schemas, function(key, schema) {
-            if (Ext.isObject(schema)) {
-                toCreate.push(schema);
-            }
-        });
-//debugger;
-        function createTable() {
-            var schema = toCreate.shift();
-            if (!schema) {
-                callback();
-                return;
-            }
-            var fields = [];
-            Ext.iterate(schema.fields, function(field) {
-                var name = field.name,
-                    label = field.label || name;
-
-                if (field.clientOnly) {
-                    return;
-                }
-                if (field.size) {
-                    fields.push({
-                        name: name,
-                        label: label,
-                        type: 'varchar',
-                        size: field.size
-                    });
-                }
-                else if (field.autoIncrement) {
-                    fields.push({
-                        name: name,
-                        label: label,
-                        type: 'pk'
-                    })
-                }
-                else {
-                    fields.push({
-                        name: name,
-                        label: label,
-                        type: field.type
-                    });
-                }
-            });
-            common.DreamFactory.createTable({
-                table: [
-                    {
-                        name: schema.name,
-                        label: schema.name,
-                        plural: schema.name,
-                        field: fields
-                    }
-                ]
-            }, function(o) {
-                console.dir(o);
-                Ext.defer(createTable, 0);
-            });
-        }
-        createTable();
-    }
-
     Ext.define('ab.controller.Main', {
         extend : 'Ext.app.Controller',
 
@@ -145,12 +83,6 @@
             }
 
             loadSchemas();
-//            loadSchemas(function() {
-//                createTables(function() {
-//                    Ext.getBody().unmask();
-//                    me.getController('LoginDialog').showDialog();
-//                })
-//            });
         },
 
         onLogoutButton : function() {
